@@ -87,3 +87,4 @@ uvicorn app.main:app --reload
 
 ## 📄 Documentação
 * Para visualizar a documentação acesse o arquivo Documentacao.Md
+
