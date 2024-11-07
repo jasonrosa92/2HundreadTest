@@ -1,34 +1,54 @@
 from fastapi import FastAPI, Depends, HTTPException
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+
 from app.auth.jwt import create_access_token, verify_access_token
+from app.auth.utils import verify_password, get_password_hash
+
+
+fake_users_db = {
+    "user": {
+        "username": "user",
+        "role": "user",
+        "password": get_password_hash("L0XuwPOdS5U")  # Senha hashada
+    },
+    "admin": {
+        "username": "admin",
+        "role": "admin",
+        "password": get_password_hash("JKSipm0YH")  # Senha hashada
+    },
+}
 
 app = FastAPI()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-fake_users_db = {
-    "user": {"username": "user", "role": "user", "password": "!3Ba92753$"},
-    "admin": {"username": "admin", "role": "admin", "password": "admin!3Ba92753$"},
-}
-
 @app.post("/token")
-def login(form_data: dict):
-    user = fake_users_db.get(form_data["username"])
-    if not user or user["password"] != form_data["password"]:
-        raise HTTPException(status_code=400, detail="Invalid credentials")
-    access_token = create_access_token(data={"sub": user["username"], "role": user["role"]})
+def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
+    user = fake_users_db.get(form_data.username)
+    if not user or not verify_password(form_data.password, user['password']):
+        raise HTTPException(
+            status_code=401,
+            detail="Incorrect username or password",
+        )
+    access_token = create_access_token(data={"sub": form_data.username})
     return {"access_token": access_token, "token_type": "bearer"}
+
+def get_current_user(token: str = Depends(oauth2_scheme)):
+    payload = verify_access_token(token)
+    if payload["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Insufficient privileges")
+    return payload
 
 @app.get("/user")
 def read_user(token: str = Depends(oauth2_scheme)):
     payload = verify_access_token(token)
-    if payload["role"] != "user":
-        raise HTTPException(status_code=403, detail="Not authorized")
-    return {"message": "Welcome, user!"}
+    if payload.get("role") != "user":
+        raise HTTPException(status_code=403, detail="Forbidden")
+    return {"message": "User content"}
 
 @app.get("/admin")
 def read_admin(token: str = Depends(oauth2_scheme)):
     payload = verify_access_token(token)
-    if payload["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Not authorized")
-    return {"message": "Welcome, admin!"}
+    if payload.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Forbidden")
+    return {"message": "Admin content"}

@@ -1,10 +1,5 @@
-from decouple import config
+from decouple import config, Csv
 
-class Config:
-    SECRET_KEY = config('SECRET_KEY')
-    ALGORITHM = config('ALGORITHM')
-    ACCESS_TOKEN_EXPIRE_MINUTES = config('ACCESS_TOKEN_EXPIRE_MINUTES', cast=int, default=30)
-
-SECRET_KEY = Config.SECRET_KEY
-ALGORITHM = Config.ALGORITHM
-ACCESS_TOKEN_EXPIRE_MINUTES = Config.ACCESS_TOKEN_EXPIRE_MINUTES
+SECRET_KEY = config("SECRET_KEY")
+ALGORITHM = config("ALGORITHM")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(config("ACCESS_TOKEN_EXPIRE_MINUTES", cast=int, default=30))
