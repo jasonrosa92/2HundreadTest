@@ -1,5 +1,6 @@
 import pytest
 from app.auth.jwt import create_access_token, verify_access_token
+from app.config import SECRET_KEY, ALGORITHM
 
 def test_create_access_token():
     data = {"sub": "test_user"}
